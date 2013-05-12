@@ -136,16 +136,22 @@ def countObjects(otype):
 		# change dir back
 		chdir(originalDir)
 
-	elif otype == 'branch':
+	elif otype in ['branch', 'tag']:
 		# print some top-level stuff
+		if otype == 'branch': 
+			ex = 'e' 
+			dirname = 'heads'
+		else: 
+			ex = ''
+			dirname = 'tags'
 		print('\n' + under + 'repo' + norm.ljust(40) + under + '# ' + 
-				otype + 'es' + norm.ljust(40))
+				otype + ex + 's' + norm.ljust(40))
 
 		# loop over repositories
 		totalObjects = 0
 		for repo in repolist:
 			# just get the number of files in .git/refs/heads
-			numObjects = len(listdir(path.join(repo, 'refs', 'heads')))
+			numObjects = len(listdir(path.join(repo, 'refs', dirname)))
 
 			# update total objects
 			totalObjects += numObjects
@@ -179,7 +185,7 @@ def printUsage(verb):
 		print('\ncount up git objects of the given type')
 		print('usage: ggit count [type]')
 		print('{u}type{n} can be any of {u}repo{n}, \
-{u}branch{n}, {u}commit{n}, {u}tree{n}, or {u}blob{n}. defaults to {u}repo{n}\n'.format(
+{u}branch{n}, {u}tag{n}, {u}commit{n}, {u}tree{n}, or {u}blob{n}. defaults to {u}repo{n}\n'.format(
 			u=under, n=norm))
 		
 if __name__ == '__main__':
