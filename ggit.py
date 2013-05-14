@@ -3,7 +3,7 @@
 # ggit is a simple tool for seeing what git projects you have
 #
 # (c) benjamin.naecker@gmail.com 2013
-'''ggit version 0.1
+'''ggit version 0.1.1
 know thy git
 (C) 2013 benjamin.naecker@gmail.com
 '''
@@ -53,23 +53,41 @@ def fileOwner(f):
 	from os import stat, getuid
 	return stat(startpath).st_uid == getuid()
 
-def listRepos(abbrev=False):
+def listRepos(abbrev=False, check=False):
 	'''list all found git repos
 
 	input:
 		abbrev - print short pathor absolute path
+		check - print a star next to repos with uncommitted changes
 	output:
 		prints some repos
 	'''
 
+	# notify and open repolist
 	print('\nyou have git repos in the following locations:\n')
 	repolist = open(path.expanduser('~/.ggit/repolist.txt'), 'r')
+	
+	# loop over each repo in repolist
 	for line in repolist.readlines():
+		# cd to it to check if uncommitted changes
+		if check:
+			chdir(line.rstrip('.git\n'))
+			df = [x.decode() for x in sp.Popen(['git', 'diff', '--name-only'], 
+				stdout=sp.PIPE).stdout.readlines()]
+			if len(df) == 0:
+				star = '  '
+			else:
+				star = '* '
+		else:
+			star = '  '
+		# check for printing abbreviated or full path
 		if abbrev:
 			repoStr = line.split('/')[-3] + '/' + line.split('/')[-2]
-			print(repoStr)
+			print(star + repoStr)
 		else:
-			print(line.rstrip('.git\n'), end='\n')
+			print(star + line.rstrip('.git\n'), end='\n')
+
+	# close file
 	repolist.close()
 	print('')
 
@@ -172,24 +190,26 @@ def printUsage(verb):
 		print('  help\t\tprint this help and exit')
 		print('  find\t\tfind all git repositories')
 		print('  list\t\tlist all git repositories')
-		print('  count <type>\tcount git objects of the given type\n')
+		print('  count\t\tcount git objects of the given type\n')
 	elif verb == 'find':
 		print('\nfind all git repositories')
-		print('usage: ggit find [startpath]')
+		print('usage: ggit find [{u}startpath{n}]'.format(u=under, n=norm))
 		print('{u}startpath{n} is the location at which to start searching\n'.format(
 			u=under, n=norm))
-		print('requires sudo if below ~')
 	elif verb == 'list':
-		print('\nlist all found git repos\n')
+		print('\nlist all found git repos.\n\
+use {u}-a{n} or {u}--abbrev{n} to only show the end of the repo\'s path\n\
+use the option {u}-c{n} or {u}--check{n} to print a star in front\
+of repos with uncommitted changes\n'.format(u=under, n=norm))
 	elif verb == 'count':
 		print('\ncount up git objects of the given type')
-		print('usage: ggit count [type]')
+		print('usage: ggit count [{u}type{n}]'.format(u=under, n=norm))
 		print('{u}type{n} can be any of {u}repo{n}, \
-{u}branch{n}, {u}tag{n}, {u}commit{n}, {u}tree{n}, or {u}blob{n}. defaults to {u}repo{n}\n'.format(
+{u}branch{n}, {u}commit{n}, {u}tag{n}, {u}tree{n}, or {u}blob{n}. defaults to {u}repo{n}\n'.format(
 			u=under, n=norm))
 		
 if __name__ == '__main__':
-	from os import path, sys, listdir, chdir
+	from os import path, sys, listdir, chdir, mkdir
 	import subprocess as sp
 
 	# parse commands!
@@ -225,6 +245,10 @@ if __name__ == '__main__':
 			print('sorry. requested startpath {p} doesn\'t exist'.format(
 				p=startpath))
 			sys.exit()
+		
+		# if this is the first time running ggit, make a ~/.ggit dir
+		if not path.exists(path.expanduser('~/.ggit')):
+			mkdir(path.expanduser('~/.ggit'))
 
 		# find
 		findRepos(startpath)
@@ -236,16 +260,24 @@ if __name__ == '__main__':
 			sys.exit()
 
 		# check for abbrev
-		if len(opts) == 0:
-			abbrev = False
+		if '-a' in opts or '--abbrev' in opts:
+			abbrev = True
 		else:
-			if opts[0] in ['-a', '--abbrev']:
-				abbrev = True
-			else:
-				abbrev = False
-		
+			abbrev = False
+
+		# check for check
+		if '-c' in opts or '--check' in opts:
+			check = True
+		else:
+			check = False
+
+		# check for both (silly)
+		if '-ac' in opts or '-ca' in opts:
+			abbrev = True
+			check = True
+
 		# list em
-		listRepos(abbrev)
+		listRepos(abbrev, check)
 
 	elif verb == 'count':
 		if len(opts) == 0:

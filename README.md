@@ -8,7 +8,8 @@ Usage
 
 To find all git repositories on your system, call `ggit find`.
 
-To list all of your repositories, use `ggit list`.
+To list all of your repositories, use `ggit list`. Using `ggit list` with the option
+`-c` or `--check` will also print a `*` in front of the repos with uncommitted changes.
 
 You can use `ggit count <object-type>` to count objects of most common types within each
 repository. For example, `ggit count commits` will print out a list of your repositories,
