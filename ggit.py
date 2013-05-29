@@ -57,8 +57,9 @@ def listRepos(abbrev=False, check=False):
 	'''list all found git repos
 
 	input:
-		abbrev - print short pathor absolute path
-		check - print a star next to repos with uncommitted changes
+		abbrev 	- print short pathor absolute path, may be a digit,
+				  indicating the number of pieces of the path to print
+		check 	- print a star next to repos with uncommitted changes
 	output:
 		prints some repos
 	'''
@@ -82,7 +83,11 @@ def listRepos(abbrev=False, check=False):
 			star = '  '
 		# check for printing abbreviated or full path
 		if abbrev:
-			repoStr = line.split('/')[-3] + '/' + line.split('/')[-2]
+			if abbrev is True:
+				repoStr = line.split('/')[-3] + '/' + line.split('/')[-2]
+			else:
+				repoStr = '/'.join(line.split('/')[-abbrev:-1])
+			
 			print(star + repoStr)
 		else:
 			print(star + line.rstrip('.git\n'), end='\n')
@@ -198,9 +203,10 @@ def printUsage(verb):
 			u=under, n=norm))
 	elif verb == 'list':
 		print('\nlist all found git repos.\n\
-use {u}-a{n} or {u}--abbrev{n} to only show the end of the repo\'s path\n\
-use the option {u}-c{n} or {u}--check{n} to print a star in front\
-of repos with uncommitted changes\n'.format(u=under, n=norm))
+use {b}-a{n}[{u}n{n}] to only show the end of the repo\'s path.\n\
+the optional parameter {u}n{n} prints the {u}n{n} parents of the git repo.\n\
+use the option {b}-c{n} to print a star in front\
+ of repos with uncommitted changes\n'.format(b=bold, u=under, n=norm))
 	elif verb == 'count':
 		print('\ncount up git objects of the given type')
 		print('usage: ggit count [{u}type{n}]'.format(u=under, n=norm))
@@ -210,6 +216,7 @@ of repos with uncommitted changes\n'.format(u=under, n=norm))
 		
 if __name__ == '__main__':
 	from os import path, sys, listdir, chdir, mkdir
+	import re
 	import subprocess as sp
 
 	# parse commands!
@@ -260,13 +267,26 @@ if __name__ == '__main__':
 			sys.exit()
 
 		# check for abbrev
-		if '-a' in opts or '--abbrev' in opts:
-			abbrev = True
+		if '-a' in opts:
+			if len(opts)-1 > opts.index('-a') and re.match('[0-9]{1}', opts[opts.index('-a') + 1]):
+				abbrev = int(opts[opts.index('-a') + 1])
+			else:
+				abbrev = True
 		else:
-			abbrev = False
+			matches = [re.match('-a[0-9]{1}', oi) for oi in opts]
+			if any(matches):
+				abbrev = int(opts[[mi is None for mi in matches].index(False)][2:])
+			else:
+				abbrev = False
+
+		# validate a numerical abbrev argument
+		if type(abbrev) is int:
+			if abbrev < 1:
+				abbrev = 3
+			abbrev += 1
 
 		# check for check
-		if '-c' in opts or '--check' in opts:
+		if '-c' in opts:
 			check = True
 		else:
 			check = False
