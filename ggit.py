@@ -72,7 +72,10 @@ def listRepos(abbrev=False, check=False):
 	for line in repolist.readlines():
 		# cd to it to check if uncommitted changes
 		if check:
-			chdir(line.rstrip('.git\n'))
+			try:
+				chdir(line.rstrip('.git\n'))
+			except OSError:
+				print('git repo ' + line.rstrip('.git\n') + ' no longer exists!')
 			df = [x.decode() for x in sp.Popen(['git', 'diff', '--name-only'], 
 				stdout=sp.PIPE).stdout.readlines()]
 			if len(df) == 0:
