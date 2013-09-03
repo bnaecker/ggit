@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
 # ggit is a simple tool for seeing what git projects you have
+# and where they are on your system.
 #
 # (c) benjamin.naecker@gmail.com 2013
 '''ggit version 0.1.1
